@@ -16,6 +16,7 @@ public class Word {
     private String translate;
     private String association;
     private String englishWordAndTranslate;
+    private Boolean isEnglishWord;
 
     public Word(String englishWord, String translate) {
         this.englishWord = englishWord;

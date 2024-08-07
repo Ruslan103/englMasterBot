@@ -4,7 +4,6 @@ import com.engl_master_bot.model.UserBot;
 import com.engl_master_bot.model.Word;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -21,31 +20,29 @@ public class LearningService {
 
     public Word getNewWordForStudy(UserBot userBot) {
         Set<Word> alreadyStudiedWords = userBot.getStudiedWords();
-        for (Word word : wordsForLearning) {
-            if (!alreadyStudiedWords.contains(word)) {
-                String englishWordAndTranslate = "*******    "
-                        + word.getEnglishWord()
-                        + " - "
-                        + word.getTranslate().toUpperCase()
-                        + "    *******";
-                word.setEnglishWordAndTranslate(englishWordAndTranslate);
-                return word;
-            }
-        }
-        return wordsForLearning.get(0);
+        int randomIndex = getRandomNumber(1, wordsForLearning.size()-1);
+        Word word = !alreadyStudiedWords.contains(wordsForLearning.get(randomIndex))
+                ? wordsForLearning.get(randomIndex)
+                : wordsForLearning.get(1);
+        String englishWordAndTranslate = "*******    "
+                + word.getEnglishWord()
+                + " - "
+                + word.getTranslate().toUpperCase()
+                + "    *******";
+        word.setEnglishWordAndTranslate(englishWordAndTranslate);
+        return word;
     }
 
-    public String getRandom() {
-        return wordsForLearning.get(getRandomNumber(0, wordsForLearning.size()) - 1).getTranslate();
+    public Word getWordForTesting(UserBot userBot) {
+        Set<Word> alreadyStudiedWords = userBot.getStudiedWords();
+        int randomIndex = getRandomNumber(0, alreadyStudiedWords.size() - 1);
+        Word word = (Word) alreadyStudiedWords.toArray()[randomIndex];
+        word.setIsEnglishWord(getRandomNumber(0, 1) == 1);
+        return word;
     }
 
-    public String getTranslate(String word) {
-        for (Word s : wordsForLearning) {
-            if (s.getEnglishWord().equals(word)) {
-                return s.getTranslate();
-            }
-        }
-        return "Упсс...";
+    public Word getRandom() {
+        return wordsForLearning.get(getRandomNumber(0, wordsForLearning.size()) - 1);
     }
 
     public static int getRandomNumber(int min, int max) {
@@ -54,5 +51,15 @@ public class LearningService {
         }
         Random random = new Random();
         return random.nextInt((max - min) + 1) + min;
+    }
+
+    public String getWordForTestingButton(UserBot userBot) {
+        Set<Word> alreadyStudiedWords = userBot.getStudiedWords();
+        int randomIndex = getRandomNumber(0, alreadyStudiedWords.size() - 1);
+        Word word = (Word) alreadyStudiedWords.toArray()[randomIndex];
+        String wordForTestingButton = userBot.getLearningWord().getIsEnglishWord()
+                ? word.getTranslate()
+                : word.getEnglishWord();
+        return wordForTestingButton;
     }
 }
