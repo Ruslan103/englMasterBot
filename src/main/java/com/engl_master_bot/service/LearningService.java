@@ -54,9 +54,8 @@ public class LearningService {
     }
 
     public String getWordForTestingButton(UserBot userBot) {
-        Set<Word> alreadyStudiedWords = userBot.getStudiedWords();
-        int randomIndex = getRandomNumber(0, alreadyStudiedWords.size() - 1);
-        Word word = (Word) alreadyStudiedWords.toArray()[randomIndex];
+        int randomIndex = getRandomNumber(0, wordsForLearning.size()-1);
+        Word word = wordsForLearning.get(randomIndex);
         String wordForTestingButton = userBot.getLearningWord().getIsEnglishWord()
                 ? word.getTranslate()
                 : word.getEnglishWord();
