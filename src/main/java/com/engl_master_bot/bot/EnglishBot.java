@@ -126,25 +126,5 @@ public class EnglishBot extends TelegramBot {
         logger.info("Number of sessions = " + sessions.size() + 1);
         sessions.put(chatId, new UserBot());
     }
-
-    String apiKey = "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";
-
-    OpenAiService service = new OpenAiService(apiKey);
-
-    private String getChatGPTResponse(String messageText) {
-
-        CompletionRequest completionRequest = CompletionRequest.builder()
-                .model("gpt-4o-mini")
-                .prompt(messageText)
-                .maxTokens(1000)
-                .build();
-
-        CompletionResult completionResult = service.createCompletion(completionRequest);
-        String result = completionResult.getChoices().get(0).getText();
-        logger.info("Response: " + result);
-        return result;
-    }
-
-
 }
 
