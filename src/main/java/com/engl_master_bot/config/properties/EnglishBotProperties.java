@@ -14,6 +14,6 @@ import org.springframework.stereotype.Component;
 @AllArgsConstructor
 @NoArgsConstructor
 public class EnglishBotProperties implements BotProperties {
-    private String username = "EnglMaster_bot";
-    private String token = "7410982815:AAHH0Vun1wbbQ5KvIwKMFovwYh2wcHpMt8E";
+    private String username = "";
+    private String token = "";
 }
