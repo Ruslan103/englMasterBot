@@ -7,7 +7,6 @@ import com.engl_master_bot.service.LearningService;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -23,7 +22,7 @@ import java.util.logging.Logger;
 
 public class EnglishBot extends TelegramBot {
     private static final Logger logger = Logger.getLogger(EnglishBot.class.getName());
-    private final String learnButtonName = "Список слов";
+
     private final String testingButtonName = "Проверить себя";
     @Autowired
     private LearningService learningService;
@@ -41,10 +40,6 @@ public class EnglishBot extends TelegramBot {
         String botText = "Начнем";
 
         try {
-            if (isLearnButton(userText) || userBot.getUserState() == null) {
-                userBot.setUserState(UserState.LEARNING);
-            }
-
             if (isUserStateTest(userBot)) {
                 botText = handleTesting(userBot, userText);
             }
@@ -56,17 +51,7 @@ public class EnglishBot extends TelegramBot {
             userBot.getSentMessageIds().add(messageId);
             setButtons(botSendMessage, userBot);
             putSession(chatId, userBot);
-
-            if (isUserStateLearning(userBot)) {
-                for (int i = 0; i < 10; i++) {
-                    userBot = handleLearning(userBot, botSendMessage);
-                    botText = userBot.getLearningWord().getEnglishWordAndTranslate();
-                    botSendMessage.setText(botText);
-                    execute(botSendMessage);
-                }
-            } else {
-                execute(botSendMessage);
-            }
+            execute(botSendMessage);
         } catch (TelegramApiException e) {
             throw new RuntimeException(e);
         }
@@ -94,51 +79,19 @@ public class EnglishBot extends TelegramBot {
         return userBot.getUserState() != null && userBot.getUserState().equals(UserState.TESTING);
     }
 
-    private boolean isUserStateLearning(UserBot userBot) {
-        return userBot.getUserState() != null && userBot.getUserState().equals(UserState.LEARNING);
-    }
-
     private String handleTesting(UserBot userBot, String userText) {
         Word learningWord = userBot.getLearningWord();
-        Word newLearningWord = learningService.getWordForTesting(userBot);
+        Word newLearningWord = learningService.getWordForTesting();
         String testingText = learningWord.getIsEnglishWord()
                 ? learningWord.getTranslate()
                 : learningWord.getEnglishWord();
-        String response = getResponse(userText, newLearningWord, testingText);
+        String response = getResponse(userText, newLearningWord, testingText, learningWord);
         userBot.setLearningWord(newLearningWord);
         return response;
     }
 
-    @NotNull
-    private static String getResponse(String userText, Word newLearningWord, String testingText) {
-        String newTestingText = newLearningWord.getIsEnglishWord()
-                ? newLearningWord.getEnglishWord()
-                : newLearningWord.getTranslate();
-
-        String response;
-        if (testingText.equals(userText)) {
-            response = "Верно!\nСледующее слово: \n\n - "
-                    + newTestingText;
-        } else {
-            response = "Не-а! \nправильное слово \n- "
-                    + testingText
-                    + " \nСледующее слово: \n- "
-                    + newTestingText;
-        }
-        return response;
-    }
-
-    private UserBot handleLearning(UserBot userBot, SendMessage botSendMessage) {
-        Word word = learningService.getNewWordForStudy(userBot);
-        userBot.setUserState(UserState.LEARNING);
-        userBot.setLearningWord(word);
-        userBot.getStudiedWords().add(word);
-        setLearnButtons(botSendMessage);
-        return userBot;
-    }
-
     private String handleTestingButton(UserBot userBot) {
-        Word word = learningService.getWordForTesting(userBot);
+        Word word = learningService.getWordForTesting();
         userBot.setUserState(UserState.TESTING);
         userBot.setLearningWord(word);
         return word.getIsEnglishWord()
@@ -146,26 +99,30 @@ public class EnglishBot extends TelegramBot {
                 : word.getTranslate();
     }
 
+    @NotNull
+    private static String getResponse(String userText, Word newLearningWord, String testingText, Word learningWord) {
+        String newTestingText = newLearningWord.getIsEnglishWord()
+                ? newLearningWord.getEnglishWord()
+                : newLearningWord.getTranslate();
+        String rightWord = learningWord.getIsEnglishWord()
+                ? learningWord.getEnglishWord()
+                : learningWord.getTranslate();
 
-    private boolean isLearnButton(String message) {
-        return message.equals(learnButtonName);
+        String response;
+        if (testingText.equals(userText)) {
+            response = "Верно!\nСледующее слово: \n\n - "
+                    + newTestingText;
+        } else {
+            response = "Не-а! " + rightWord + " - "
+                    + testingText
+                    + " \nСледующее слово: \n- "
+                    + newTestingText;
+        }
+        return response;
     }
 
     private boolean isTestingButton(String message) {
         return message.equals(testingButtonName);
-    }
-
-
-    private void deleteAllMessages(UserBot userBot) throws TelegramApiException {
-        if (!userBot.getSentMessageIds().isEmpty()) {
-            for (Integer messageId : userBot.getSentMessageIds()) {
-                DeleteMessage deleteMessage = new DeleteMessage();
-                deleteMessage.setChatId(userBot.getChatId());
-                deleteMessage.setMessageId(messageId);
-                execute(deleteMessage);
-            }
-            userBot.getSentMessageIds().clear();
-        }
     }
 
     private UserBot getUser(Update update) {
@@ -208,16 +165,10 @@ public class EnglishBot extends TelegramBot {
 
         List<KeyboardRow> keyboard = new ArrayList<>(); // Создаем список строк клавиатуры
 
-        KeyboardRow keyboardFirstRow = new KeyboardRow(); // Первая строчка клавиатуры
-        KeyboardButton learnButton = new KeyboardButton(learnButtonName);
-        keyboardFirstRow.add(learnButton); // Добавляем кнопки в первую строчку клавиатуры
+        KeyboardRow keyboardSecondRow = new KeyboardRow(); // строчка клавиатуры
+        keyboardSecondRow.add(new KeyboardButton(testingButtonName)); // Добавляем кнопки в строчку клавиатуры
 
-        KeyboardRow keyboardSecondRow = new KeyboardRow(); // Вторая строчка клавиатуры
-        keyboardSecondRow.add(new KeyboardButton(testingButtonName)); // Добавляем кнопки во вторую строчку клавиатуры
-
-        keyboard.add(keyboardFirstRow);
         keyboard.add(keyboardSecondRow);
-
         replyKeyboardMarkup.setKeyboard(keyboard); // и устанавливаем этот список нашей клавиатуре
     }
 

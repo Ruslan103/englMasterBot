@@ -25,6 +25,8 @@ public class UserBot {
     private UserState userState;
     private Word learningWord;
     private Message message;
-    private Set<Word> studiedWords = new HashSet<>();
+    private Set<Word> wrongWords = new HashSet<>();
+    private Set<Word> rightWords = new HashSet<>();
+    private List<Word> wordsForLearning = new ArrayList<>();
     private List<Integer> sentMessageIds = new ArrayList<>();
 }

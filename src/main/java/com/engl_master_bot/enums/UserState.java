@@ -1,6 +1,6 @@
 package com.engl_master_bot.enums;
 
 public enum UserState {
-    LEARNING,
-    TESTING
+    TESTING,
+    TESTING_WRONG_WORD
 }
